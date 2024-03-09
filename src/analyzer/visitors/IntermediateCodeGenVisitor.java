@@ -83,8 +83,11 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTEnumStmt node, Object data) {
-        node.childrenAccept(this, data);
         // TODO
+        SymbolTable.put(((ASTIdentifier) node.jjtGetChild(0)).getValue(), VarType.EnumType);
+        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
+            EnumValueTable.put(((ASTIdentifier) node.jjtGetChild(i)).getValue(), i - 1);
+        }
         return null;
     }
 
@@ -174,12 +177,14 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
         String identifier = ((ASTIdentifier) node.jjtGetChild(0)).getValue();
         if (SymbolTable.get(identifier) == VarType.Number) {
             m_writer.println(identifier + " = " + node.jjtGetChild(1).jjtAccept(this, data));
-        } else {
+        } else if (SymbolTable.get(identifier) == VarType.Bool) {
             BoolLabel boolLabel = new BoolLabel(newLabel(), newLabel());
             node.jjtGetChild(1).jjtAccept(this, boolLabel);
             m_writer.println(boolLabel.lTrue + "\n" + identifier + " = 1");
             String nextId = data != null ? data.toString() : "_L0";
             m_writer.println("goto " + nextId + "\n" + boolLabel.lFalse + "\n" + identifier + " = 0");
+        } else {
+            m_writer.println(identifier + " = " + EnumValueTable.get(node.jjtGetChild(1).jjtAccept(this, data)));
         }
         return identifier;
     }
