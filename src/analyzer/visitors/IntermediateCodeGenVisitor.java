@@ -44,9 +44,9 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTProgram node, Object data) {
-        node.childrenAccept(this, data);
         // TODO
         String endLabel = newLabel();
+        node.childrenAccept(this, data);
         m_writer.println(endLabel);
         return null;
     }
@@ -141,11 +141,9 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
         // TODO
         String identifier = ((ASTIdentifier) node.jjtGetChild(0)).getValue();
         if (SymbolTable.get(identifier) == VarType.Number) {
-            System.out.println(node.jjtGetChild(1).jjtAccept(this, data));
             m_writer.println(identifier + " = " + node.jjtGetChild(1).jjtAccept(this, data));
         }
-
-        return null;
+        return identifier;
     }
 
     @Override
@@ -157,9 +155,18 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
         // À noter qu'il n'est pas nécessaire de boucler sur tous les enfants.
         // La grammaire n'accepte plus que 2 enfants maximum pour certaines opérations, au lieu de plusieurs
         // dans les TPs précédents. Vous pouvez vérifier au cas par cas dans le fichier Grammaire.jjt.
-        node.childrenAccept(this, data);
+
         // TODO
-        return null;
+        if (node.jjtGetNumChildren() == 1) {
+            return node.jjtGetChild(0).jjtAccept(this, data);
+        } else {
+            String addr = newID();
+            String value1 = (String) node.jjtGetChild(0).jjtAccept(this, data);
+            String value2 = (String) node.jjtGetChild(1).jjtAccept(this, data);
+            String res = addr + " = " + value1 + " " + ops.firstElement() + " " + value2;
+            m_writer.println(res);
+            return addr;
+        }
     }
 
     @Override
@@ -174,9 +181,28 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTUnaExpr node, Object data) {
-        node.jjtGetChild(0).jjtAccept(this, data);
         // TODO
-        return null;
+        Vector<String> operators = node.getOps();
+        if (operators.isEmpty()) {
+            return node.jjtGetChild(0).jjtAccept(this, data);
+        }
+        String addr = "";
+
+        for (int i = 0; i < operators.size(); i++) {
+            String tmp = "";
+            String op = operators.get(i);
+            if (i == 0) {
+                String res = (String) node.jjtGetChild(0).jjtAccept(this, data);
+                tmp = newID();
+                m_writer.println(tmp + " = " + op + " " + res);
+            } else {
+                tmp = newID();
+                m_writer.println(tmp + " = " + op + " " + addr);
+            }
+            addr = tmp;
+        }
+
+        return addr;
     }
 
     @Override
@@ -185,23 +211,7 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
         if (node.jjtGetNumChildren() == 1) {
             return node.jjtGetChild(0).jjtAccept(this, data);
         }
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            if (i % 2 == 0) {
-                String op = (i == 0) ? (String) node.getOps().get(0) : (String) node.getOps().get(i - 1);
-                if (op.equals("&&")) {
-                    BoolLabel label = new BoolLabel(newLabel(), ((BoolLabel) data).lFalse);
-                    node.jjtGetChild(i).jjtAccept(this, label);
-                    m_writer.println(label.lTrue);
-                } else if (op.equals("||")) {
-                    BoolLabel label = new BoolLabel(((BoolLabel) data).lTrue, newLabel());
-                    node.jjtGetChild(i).jjtAccept(this, label);
-                    m_writer.println(label.lFalse);
-                }
-            } else {
-                node.jjtGetChild(i).jjtAccept(this, data);
-            }
-        }
-        return null;
+        return node.jjtGetChild(0).jjtAccept(this, data);
     }
 
     @Override
@@ -215,21 +225,21 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
                 + node.jjtGetChild(1).jjtAccept(this, data) + " goto " + ((BoolLabel) data).lTrue
         );
         m_writer.println("goto " + ((BoolLabel) data).lFalse);
-        return null;
+        return node.jjtGetChild(0).jjtAccept(this, data);
     }
 
     @Override
     public Object visit(ASTNotExpr node, Object data) {
-        node.jjtGetChild(0).jjtAccept(this, data);
-        // TODO
+        if (node.jjtGetNumChildren() == 1) {
+            return node.jjtGetChild(0).jjtAccept(this, data);
+        }
         return null;
     }
 
     @Override
     public Object visit(ASTGenValue node, Object data) {
-        node.jjtGetChild(0).jjtAccept(this, data);
         // TODO
-        return null;
+        return node.jjtGetChild(0).jjtAccept(this, data);
     }
 
     @Override
