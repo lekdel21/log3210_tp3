@@ -128,7 +128,6 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTBreakStmt node, Object data) {
-        //node.childrenAccept(this, data);
         // TODO
         m_writer.println("goto _L0");
         return null;
@@ -178,7 +177,6 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
     public Object visit(ASTForStmt node, Object data) {
         // TODO
         String nextLabel = data != null ? ((BoolLabel) data).lTrue : "_L0";
-        System.out.println(data);
         String start = newLabel();
         BoolLabel boolLabel = new BoolLabel(newLabel(), nextLabel);
         BoolLabel startBoolLabel = new BoolLabel(newLabel(), nextLabel);
