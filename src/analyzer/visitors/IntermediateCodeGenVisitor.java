@@ -93,22 +93,44 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTSwitchStmt node, Object data) {
-        node.childrenAccept(this, data);
         // TODO
+
+        String switchVar = (String) node.jjtGetChild(0).jjtAccept(this, data);
+        String nextLabel;
+        String gotoLabel = "";
+
+        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
+            if (i != node.jjtGetNumChildren() - 1) nextLabel = newLabel();
+            else nextLabel = "_L0";
+            m_writer.println("if " + switchVar + " != " + EnumValueTable.get((String) node.jjtGetChild(i).jjtAccept(this, data)) + " goto " + nextLabel);
+            if (!gotoLabel.equals("")) {
+                m_writer.println(gotoLabel);
+                gotoLabel = "";
+            }
+            node.jjtGetChild(i).jjtGetChild(1).jjtAccept(this, data);
+            if (node.jjtGetChild(i).jjtGetNumChildren() == 3) node.jjtGetChild(i).jjtGetChild(2).jjtAccept(this, data);
+            else if (i != node.jjtGetNumChildren() - 1) {
+                gotoLabel = newLabel();
+                m_writer.println("goto " + gotoLabel);
+            }
+            if (i != node.jjtGetNumChildren() - 1) m_writer.println(nextLabel);
+        }
+
         return null;
     }
 
     @Override
     public Object visit(ASTCaseStmt node, Object data) {
-        node.childrenAccept(this, data);
         // TODO
-        return null;
+        String value = (String) node.jjtGetChild(0).jjtAccept(this, data);
+        return value;
     }
 
     @Override
     public Object visit(ASTBreakStmt node, Object data) {
-        node.childrenAccept(this, data);
+        //node.childrenAccept(this, data);
         // TODO
+        m_writer.println("goto _L0");
         return null;
     }
 
