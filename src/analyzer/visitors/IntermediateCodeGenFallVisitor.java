@@ -98,24 +98,34 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
         // TODO
 
         String switchVar = (String) node.jjtGetChild(0).jjtAccept(this, data);
-        String nextLabel;
-        String gotoLabel = "";
+        String[] labels = new String[node.jjtGetNumChildren() * 2 - 1];
+        String[] caseVars = new String[node.jjtGetNumChildren() - 1];
 
-        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
-            if (i != node.jjtGetNumChildren() - 1) nextLabel = newLabel();
-            else nextLabel = "_L0";
-            m_writer.println("if " + switchVar + " != " + EnumValueTable.get((String) node.jjtGetChild(i).jjtAccept(this, data)) + " goto " + nextLabel);
-            if (!gotoLabel.equals("")) {
-                m_writer.println(gotoLabel);
-                gotoLabel = "";
+        int j = 0;
+        String label = "";
+        for (int i = 0; i < labels.length - 1; i += 2) {
+            labels[i] = newLabel();
+            caseVars[j] = (String) node.jjtGetChild(j + 1).jjtAccept(this, data);
+            m_writer.println("if " + switchVar + " == " + EnumValueTable.get(caseVars[j]) + " goto " + labels[i]);
+            if (i == labels.length - 3) m_writer.println("goto _L0");
+            else {
+                labels[i + 1] = newLabel();
+                m_writer.println("goto " + labels[i + 1]);
             }
-            node.jjtGetChild(i).jjtGetChild(1).jjtAccept(this, data);
-            if (node.jjtGetChild(i).jjtGetNumChildren() == 3) node.jjtGetChild(i).jjtGetChild(2).jjtAccept(this, data);
-            else if (i != node.jjtGetNumChildren() - 1) {
-                gotoLabel = newLabel();
-                m_writer.println("goto " + gotoLabel);
+            m_writer.println(labels[i]);
+            if (!label.equals("")) {
+                m_writer.println(label);
+                label = "";
             }
-            if (i != node.jjtGetNumChildren() - 1) m_writer.println(nextLabel);
+            j++;
+            node.jjtGetChild(j).jjtGetChild(1).jjtAccept(this, data);
+            if (node.jjtGetChild(j).jjtGetNumChildren() < 3 && i != labels.length - 3) {
+                label = newLabel();
+                m_writer.println("goto " + label);
+            }
+
+            if (node.jjtGetChild(j).jjtGetNumChildren() == 3) node.jjtGetChild(j).jjtGetChild(2).jjtAccept(this, data);
+            if (i != labels.length - 3) m_writer.println(labels[i + 1]);
         }
 
         return null;
