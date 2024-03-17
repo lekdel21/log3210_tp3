@@ -156,14 +156,12 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
         // TODO
         String nextLabel = data != null ? (String) data : "_L0";
         if (node.jjtGetNumChildren() == 2) {
-            IntermediateCodeGenFallVisitor.BoolLabel boolLabel = new IntermediateCodeGenFallVisitor.BoolLabel(newLabel(), nextLabel);
+            BoolLabel boolLabel = new BoolLabel("fall", nextLabel);
             node.jjtGetChild(0).jjtAccept(this, boolLabel);
-            m_writer.println(boolLabel.lTrue);
             node.jjtGetChild(1).jjtAccept(this, nextLabel);
         } else {
-            IntermediateCodeGenFallVisitor.BoolLabel boolLabel = new IntermediateCodeGenFallVisitor.BoolLabel(newLabel(), newLabel());
+            BoolLabel boolLabel = new BoolLabel("fall", newLabel());
             node.jjtGetChild(0).jjtAccept(this, boolLabel);
-            m_writer.println(boolLabel.lTrue);
             node.jjtGetChild(1).jjtAccept(this, nextLabel);
             m_writer.println("goto " + nextLabel + "\n" + boolLabel.lFalse);
             node.jjtGetChild(2).jjtAccept(this, nextLabel);
@@ -176,10 +174,9 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
         // TODO
         String nextLabel = data != null ? (String) data : "_L0";
         String start = newLabel();
-        IntermediateCodeGenFallVisitor.BoolLabel boolLabel = new IntermediateCodeGenFallVisitor.BoolLabel(newLabel(), nextLabel);
+        BoolLabel boolLabel = new BoolLabel("fall", nextLabel);
         m_writer.println(start);
         node.jjtGetChild(0).jjtAccept(this, boolLabel);
-        m_writer.println(boolLabel.lTrue);
         node.jjtGetChild(1).jjtAccept(this, start);
         m_writer.println("goto " + start);
         return null;
