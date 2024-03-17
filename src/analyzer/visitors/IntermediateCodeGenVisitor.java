@@ -69,9 +69,10 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
     @Override
     public Object visit(ASTBlock node, Object data) {
         // TODO
+        String label;
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             if (i != node.jjtGetNumChildren() - 1) {
-                String label = newLabel();
+                label = newLabel();
                 node.jjtGetChild(i).jjtAccept(this, label);
                 m_writer.println(label);
             } else {
@@ -122,8 +123,7 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
     @Override
     public Object visit(ASTCaseStmt node, Object data) {
         // TODO
-        String value = (String) node.jjtGetChild(0).jjtAccept(this, data);
-        return value;
+        return node.jjtGetChild(0).jjtAccept(this, data);
     }
 
     @Override
@@ -143,16 +143,16 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
     public Object visit(ASTIfStmt node, Object data) {
         // TODO
         String nextLabel = data != null ? (String) data : "_L0";
+        BoolLabel boolLabel;
         if (node.jjtGetNumChildren() == 2) {
-            BoolLabel boolLabel = new BoolLabel(newLabel(), nextLabel);
-            node.jjtGetChild(0).jjtAccept(this, boolLabel);
-            m_writer.println(boolLabel.lTrue);
-            node.jjtGetChild(1).jjtAccept(this, nextLabel);
+            boolLabel = new BoolLabel(newLabel(), nextLabel);
         } else {
-            BoolLabel boolLabel = new BoolLabel(newLabel(), newLabel());
-            node.jjtGetChild(0).jjtAccept(this, boolLabel);
-            m_writer.println(boolLabel.lTrue);
-            node.jjtGetChild(1).jjtAccept(this, nextLabel);
+            boolLabel = new BoolLabel(newLabel(), newLabel());
+        }
+        node.jjtGetChild(0).jjtAccept(this, boolLabel);
+        m_writer.println(boolLabel.lTrue);
+        node.jjtGetChild(1).jjtAccept(this, nextLabel);
+        if (node.jjtGetNumChildren() != 2) {
             m_writer.println("goto " + nextLabel + "\n" + boolLabel.lFalse);
             node.jjtGetChild(2).jjtAccept(this, nextLabel);
         }
